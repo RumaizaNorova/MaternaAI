@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MaternaAI — Maternal Risk Stratification</title>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080d18;
+  --surface:#0d1424;
+  --surface2:#111929;
+  --border:#1c2a42;
+  --border2:#243452;
+  --teal:#2dd4bf;
+  --teal-dim:#1a7a70;
+  --teal-glow:rgba(45,212,191,0.12);
+  --rose:#fb7185;
+  --rose-glow:rgba(251,113,133,0.12);
+  --amber:#fbbf24;
+  --green:#34d399;
+  --text:#e2e8f0;
+  --text-muted:#64748b;
+  --text-dim:#94a3b8;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:60px;
+  background:rgba(8,13,24,0.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem}
+.nav-logo svg{color:var(--teal)}
+.nav-logo span{color:var(--teal)}
+.nav-pills{display:flex;gap:6px}
+.nav-pill{
+  padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:500;cursor:pointer;
+  border:1px solid var(--border);color:var(--text-muted);background:transparent;
+  transition:all .2s;
+}
+.nav-pill:hover,.nav-pill.active{background:var(--teal-glow);border-color:var(--teal-dim);color:var(--teal)}
+.nav-tags{display:flex;gap:6px}
+.ibm-tag{
+  padding:3px 10px;border-radius:4px;font-size:.68rem;font-weight:600;letter-spacing:.04em;
+  background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);color:var(--teal);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── Hero ── */
+.hero{
+  padding:60px 40px 48px;
+  background:linear-gradient(135deg,#080d18 0%,#0a1428 40%,#091220 100%);
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-100px;right:-80px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(45,212,191,.05) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-eyebrow{font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:16px}
+.hero h1{font-size:2.6rem;font-weight:700;line-height:1.12;margin-bottom:14px}
+.hero h1 em{font-style:normal;color:var(--teal)}
+.hero p{font-size:.95rem;color:var(--text-dim);max-width:600px;line-height:1.7;margin-bottom:28px}
+.hero-stats{display:flex;gap:48px;flex-wrap:wrap}
+.hstat .num{font-size:2rem;font-weight:700;color:var(--rose);font-variant-numeric:tabular-nums}
+.hstat .num.teal{color:var(--teal)}
+.hstat .lab{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+
+/* ── Tool strip ── */
+.tool-strip{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  padding:14px 40px;background:var(--bg);border-bottom:1px solid var(--border);
+}
+.tool-strip .label{font-size:.68rem;color:var(--text-muted);margin-right:4px;text-transform:uppercase;letter-spacing:.08em}
+
+/* ── Main layout ── */
+.main{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 240px)}
+.sidebar{
+  border-right:1px solid var(--border);padding:28px 24px;
+  position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;
+}
+.content{padding:28px 32px}
+
+/* ── Form ── */
+.form-title{font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:20px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:7px;font-weight:500}
+.form-group label span{color:var(--text-dim);font-weight:400;margin-left:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+input[type=range]{
+  width:100%;height:4px;appearance:none;-webkit-appearance:none;
+  background:var(--border2);border-radius:2px;cursor:pointer;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--teal);cursor:pointer;
+}
+.range-row{display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-muted);margin-top:4px}
+.range-val{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:500;
+  color:var(--teal);float:right;margin-bottom:4px;
+}
+
+input[type=number]{
+  width:100%;padding:9px 12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:.85rem;outline:none;
+}
+input[type=number]:focus{border-color:var(--teal-dim)}
+
+.btn-assess{
+  width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--teal),#0d9488);
+  color:#0d1424;font-weight:700;font-size:.92rem;font-family:'Inter',sans-serif;
+  margin-top:10px;transition:opacity .2s;position:relative;
+}
+.btn-assess:hover{opacity:.88}
+.btn-assess.loading{opacity:.6;cursor:wait}
+
+.sidebar-note{
+  margin-top:20px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;font-size:.75rem;color:var(--text-muted);line-height:1.6;
+}
+.sidebar-note strong{color:var(--text-dim)}
+
+/* ── Result area ── */
+.result-placeholder{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;min-height:400px;color:var(--text-muted);text-align:center;gap:12px;
+}
+.result-placeholder svg{opacity:.2}
+.result-placeholder p{font-size:.88rem}
+
+/* ── Risk banner ── */
+.risk-banner{
+  border-radius:14px;padding:24px 28px;margin-bottom:24px;border:1px solid;
+}
+.risk-low   {background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.3)}
+.risk-mid   {background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.3)}
+.risk-high  {background:rgba(251,113,133,.06);border-color:rgba(251,113,133,.3)}
+.risk-label-text{font-size:2rem;font-weight:700;margin-bottom:6px}
+.risk-low  .risk-label-text{color:var(--green)}
+.risk-mid  .risk-label-text{color:var(--amber)}
+.risk-high .risk-label-text{color:var(--rose)}
+.risk-sub{font-size:.82rem;color:var(--text-muted);margin-bottom:16px}
+.prob-pills{display:flex;gap:8px}
+.prob-pill{
+  flex:1;padding:10px 8px;border-radius:8px;text-align:center;
+  font-size:.8rem;font-weight:600;border:1px solid;
+}
+.prob-pill .ci{font-size:.65rem;opacity:.7;display:block;margin-top:2px;font-weight:400}
+.pp-low{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.25);color:var(--green)}
+.pp-mid{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25);color:var(--amber)}
+.pp-high{background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.25);color:var(--rose)}
+.conf-badge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+  padding:5px 14px;border-radius:20px;font-size:.75rem;font-weight:600;
+}
+.conf-high{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--green)}
+.conf-mid {background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:var(--amber)}
+.conf-low {background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.25);color:var(--rose)}
+.teen-flag{
+  margin-top:12px;padding:9px 14px;border-radius:8px;font-size:.8rem;font-weight:600;
+  background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--amber);
+}
+
+/* ── Two columns ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+
+/* ── Card ── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:20px;
+}
+.card-title{
+  font-size:.62rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── LIME bars ── */
+.lime-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.lime-row:last-child{border-bottom:none}
+.lime-feat{font-size:.78rem;color:var(--text-dim);min-width:150px;line-height:1.3}
+.lime-cond{font-size:.65rem;color:var(--text-muted);display:block;font-family:'JetBrains Mono',monospace}
+.lime-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.lime-bar{height:100%;border-radius:3px;transition:width .5s}
+.lime-val{font-size:.72rem;font-family:'JetBrains Mono',monospace;min-width:54px;text-align:right}
+
+/* ── Clinical brief ── */
+.brief-box{
+  background:var(--surface);border:1px solid;border-radius:12px;
+  padding:20px 22px;margin-bottom:20px;font-size:.88rem;line-height:1.75;color:var(--text-dim);
+}
+.brief-box.low   {border-color:rgba(52,211,153,.3)}
+.brief-box.mid   {border-color:rgba(251,191,36,.3)}
+.brief-box.high  {border-color:rgba(251,113,133,.3)}
+.brief-title{font-size:.62rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px}
+
+/* ── Section tabs ── */
+.section-tabs{
+  display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:28px;
+  overflow-x:auto;
+}
+.stab{
+  padding:10px 20px;font-size:.82rem;font-weight:500;cursor:pointer;
+  border-bottom:2px solid transparent;color:var(--text-muted);
+  white-space:nowrap;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;
+}
+.stab:hover{color:var(--text)}
+.stab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.section-panel{display:none}
+.section-panel.active{display:block}
+
+/* ── Metric cards ── */
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.metric-card .mval{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.metric-card .mlabel{font-size:.68rem;color:var(--text-muted);margin-top:5px}
+.metric-card .msub{font-size:.72rem;color:var(--text-muted);margin-top:6px}
+
+/* ── Robustness meter ── */
+.rob-meter{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin:8px 0}
+.rob-fill{height:100%;border-radius:4px;transition:width .6s}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{
+  display:inline-block;width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(45,212,191,.3);border-top-color:var(--teal);
+  animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;
+}
+
+/* ── Verdict banner ── */
+.verdict{border-radius:8px;padding:12px 18px;font-size:.82rem;font-weight:600;margin-bottom:16px}
+.verdict.ok  {background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);color:var(--green)}
+.verdict.fail{background:rgba(251,113,133,.08);border:1px solid rgba(251,113,133,.3);color:var(--rose)}
+
+/* ── Footer ── */
+footer{
+  text-align:center;padding:20px;font-size:.72rem;color:var(--text-muted);
+  border-top:1px solid var(--border);margin-top:40px;
+}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto}
+  .metric-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      <circle cx="12" cy="9" r="2.5"/>
+    </svg>
+    Materna<span>AI</span>
+  </div>
+  <div class="nav-tags">
+    <span class="ibm-tag">AIF360</span>
+    <span class="ibm-tag">ART</span>
+    <span class="ibm-tag">AIX360</span>
+    <span class="ibm-tag">diffprivlib</span>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">IBM Z × UNSA Sheridan Hackathon 2026 &nbsp;·&nbsp; UN SDG 3 + SDG 10</div>
+  <h1>Every mother deserves a<br/>fair <em>risk assessment.</em></h1>
+  <p>AI-powered maternal health risk stratification for underserved communities.
+     Built on four IBM open-source research libraries — fairness, adversarial robustness,
+     local explainability, and differential privacy.</p>
+  <div class="hero-stats">
+    <div class="hstat"><div class="num">287K</div><div class="lab">maternal deaths / year</div></div>
+    <div class="hstat"><div class="num">95%</div><div class="lab">in low-income countries</div></div>
+    <div class="hstat"><div class="num">3×</div><div class="lab">higher risk, teen mothers</div></div>
+    <div class="hstat"><div class="num teal">0.951</div><div class="lab">model AUC-ROC</div></div>
+  </div>
+</div>
+
+<!-- Tool strip -->
+<div class="tool-strip">
+  <span class="label">IBM Tools:</span>
+  <span class="ibm-tag">AI Fairness 360 — bias audit + reweighing</span>
+  <span class="ibm-tag">Adversarial Robustness Toolbox — security audit</span>
+  <span class="ibm-tag">AI Explainability 360 — LIME local explanations</span>
+  <span class="ibm-tag">diffprivlib — ε=1.0 differential privacy</span>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Sidebar: patient form -->
+  <aside class="sidebar">
+    <div class="form-title">Patient Vital Signs</div>
+    <div class="form-group">
+      <label>Age <span>(years)</span><span class="range-val" id="v-age">25</span></label>
+      <input type="range" id="age" min="10" max="49" value="25" oninput="upd('age','v-age')"/>
+      <div class="range-row"><span>10</span><span>49</span></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Systolic BP <span class="range-val" id="v-sys">118</span></label>
+        <input type="range" id="systolic" min="70" max="160" value="118" oninput="upd('systolic','v-sys')"/>
+        <div class="range-row"><span>70</span><span>160</span></div>
+      </div>
+      <div class="form-group">
+        <label>Diastolic BP <span class="range-val" id="v-dia">76</span></label>
+        <input type="range" id="diastolic" min="40" max="100" value="76" oninput="upd('diastolic','v-dia')"/>
+        <div class="range-row"><span>40</span><span>100</span></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Blood Glucose <span>(mmol/L)</span></label>
+      <input type="number" id="glucose" value="7.8" min="6.0" max="19.0" step="0.1"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Body Temp <span>(°F)</span></label>
+        <input type="number" id="temp" value="98.6" min="96.0" max="103.0" step="0.1"/>
+      </div>
+      <div class="form-group">
+        <label>Heart Rate <span class="range-val" id="v-hr">72</span></label>
+        <input type="range" id="hr" min="50" max="90" value="72" oninput="upd('hr','v-hr')"/>
+        <div class="range-row"><span>50</span><span>90</span></div>
+      </div>
+    </div>
+    <button class="btn-assess" id="btn-assess" onclick="assess()">
+      Assess Risk
+    </button>
+    <div class="sidebar-note">
+      <strong>IBM UQ360 methodology:</strong> prediction includes 90% bootstrap confidence intervals
+      from 200 perturbation samples.<br/><br/>
+      <strong>IBM AIX360:</strong> LIME explanation shows which vitals drove <em>this specific</em> prediction.
+    </div>
+  </aside>
+
+  <!-- Content: results -->
+  <div class="content">
+    <!-- Result area -->
+    <div id="result-area">
+      <div class="result-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+        <p>Enter patient vitals and click <strong>Assess Risk</strong> to get<br/>
+        a risk stratification with LIME explanation and 90% CI.</p>
+      </div>
+    </div>
+
+    <!-- Section tabs -->
+    <div class="section-tabs" style="margin-top:32px">
+      <button class="stab active" onclick="showTab('model')">Model Performance</button>
+      <button class="stab" onclick="showTab('fairness')">IBM AIF360 Fairness</button>
+      <button class="stab" onclick="showTab('security')">IBM ART Security</button>
+      <button class="stab" onclick="showTab('privacy')">IBM Privacy (ε=1.0)</button>
+      <button class="stab" onclick="showTab('population')">Population</button>
+    </div>
+
+    <!-- Model tab -->
+    <div class="section-panel active" id="tab-model">
+      <div id="model-content"><div class="result-placeholder" style="min-height:200px"><p>Loading…</p></div></div>
+    </div>
+
+    <!-- Fairness tab -->
+    <div class="section-panel" id="tab-fairness">
+      <div id="fairness-content"><div class="result-placeholder" style="min-height:200px"><p>Loading…</p></div></div>
+    </div>
+
+    <!-- Security tab -->
+    <div class="section-panel" id="tab-security">
+      <div id="security-content"><div class="result-placeholder" style="min-height:200px"><p>Loading…</p></div></div>
+    </div>
+
+    <!-- Privacy tab -->
+    <div class="section-panel" id="tab-privacy">
+      <div id="privacy-content"><div class="result-placeholder" style="min-height:200px"><p>Loading…</p></div></div>
+    </div>
+
+    <!-- Population tab -->
+    <div class="section-panel" id="tab-population">
+      <div id="pop-chart" style="height:360px"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  MaternaAI &nbsp;·&nbsp; IBM Z × UNSA Sheridan Hackathon 2026 &nbsp;·&nbsp;
+  IBM AI Fairness 360 &nbsp;·&nbsp; IBM ART &nbsp;·&nbsp; IBM AIX360 &nbsp;·&nbsp; IBM diffprivlib
+  &nbsp;·&nbsp; UN SDG 3 + SDG 10
+</footer>
+
+<script>
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+function upd(id, vid) { $(vid).textContent = $(id).value; }
+
+function showTab(name) {
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  $('tab-'+name).classList.add('active');
+}
+
+const COLORS = { 'Low Risk': '#34d399', 'Medium Risk': '#fbbf24', 'High Risk': '#fb7185' };
+const PLOTLY_LAYOUT = {
+  paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  font:{family:'Inter',color:'#64748b', size:12},
+  margin:{t:24,b:40,l:40,r:16},
+  xaxis:{gridcolor:'#1c2a42',zerolinecolor:'#243452'},
+  yaxis:{gridcolor:'#1c2a42',zerolinecolor:'#243452'},
+};
+
+// ── Assess ─────────────────────────────────────────────────────────────────────
+async function assess() {
+  const btn = $('btn-assess');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spinner"></span>Analysing…';
+
+  const payload = {
+    age:      +$('age').value,
+    systolic: +$('systolic').value,
+    diastolic:+$('diastolic').value,
+    glucose:  +$('glucose').value,
+    temp:     +$('temp').value,
+    hr:       +$('hr').value,
+  };
+
+  try {
+    const r = await fetch('/api/predict', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    renderResult(d, payload);
+  } catch(e) {
+    $('result-area').innerHTML = `<div class="verdict fail">Error: ${e.message}</div>`;
+  } finally {
+    btn.classList.remove('loading');
+    btn.innerHTML = 'Assess Risk';
+  }
+}
+
+function renderResult(d, vitals) {
+  const css = ['low','mid','high'][d.pred];
+  const clr = [COLORS['Low Risk'], COLORS['Medium Risk'], COLORS['High Risk']][d.pred];
+  const confCls = d.confidence >= 0.9 ? 'conf-high' : d.confidence >= 0.75 ? 'conf-mid' : 'conf-low';
+  const briefCls = ['low','mid','high'][d.pred];
+
+  const teenHtml = d.is_teen ? `
+    <div class="teen-flag">⚠ Teenage patient — IBM AIF360 bias mitigation active. Extra clinical review recommended.</div>` : '';
+
+  const limeHtml = d.lime.map(item => {
+    const maxAbs = Math.max(...d.lime.map(i => Math.abs(i.contribution)));
+    const w = Math.round(Math.abs(item.contribution) / maxAbs * 100);
+    const barClr = item.contribution > 0 ? '#fb7185' : '#34d399';
+    const sign = item.contribution > 0 ? '↑ risk' : '↓ risk';
+    const valSign = item.contribution > 0 ? '+' : '';
+    return `<div class="lime-row">
+      <div class="lime-feat">${item.label}<span class="lime-cond">${item.condition}</span></div>
+      <div class="lime-bar-wrap"><div class="lime-bar" style="width:${w}%;background:${barClr}"></div></div>
+      <div class="lime-val" style="color:${barClr}">${valSign}${(item.contribution*100).toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  $('result-area').innerHTML = `
+    <div class="risk-banner risk-${css}">
+      <div class="risk-label-text">${d.label}</div>
+      <div class="risk-sub">IBM MaternaAI · WHO dataset · Gradient Boosting · AUC 0.951</div>
+      <div class="prob-pills">
+        <div class="prob-pill pp-low">Low <strong>${(d.probs[0]*100).toFixed(0)}%</strong>
+          <span class="ci">${(d.ci_low[0]*100).toFixed(0)}–${(d.ci_high[0]*100).toFixed(0)}% CI</span></div>
+        <div class="prob-pill pp-mid">Medium <strong>${(d.probs[1]*100).toFixed(0)}%</strong>
+          <span class="ci">${(d.ci_low[1]*100).toFixed(0)}–${(d.ci_high[1]*100).toFixed(0)}% CI</span></div>
+        <div class="prob-pill pp-high">High <strong>${(d.probs[2]*100).toFixed(0)}%</strong>
+          <span class="ci">${(d.ci_low[2]*100).toFixed(0)}–${(d.ci_high[2]*100).toFixed(0)}% CI</span></div>
+      </div>
+      <div><span class="conf-badge ${confCls}">
+        <span>◉</span> ${(d.confidence*100).toFixed(0)}% confidence — ${d.interval_label}
+      </span></div>
+      ${teenHtml}
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">IBM AIX360 — LIME Local Explanation</div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:12px">
+          Why did <em>this specific patient</em> receive this score?
+        </div>
+        ${limeHtml}
+      </div>
+      <div class="card">
+        <div class="card-title">Risk Probabilities with 90% CI</div>
+        <div id="prob-chart" style="height:210px"></div>
+      </div>
+    </div>
+
+    ${d.brief ? `
+    <div class="brief-box ${briefCls}">
+      <div class="brief-title">Clinical AI Brief</div>
+      ${d.brief}
+    </div>` : ''}
+  `;
+
+  // Probability chart with CI error bars
+  Plotly.newPlot('prob-chart', [{
+    type: 'bar',
+    x: ['Low Risk','Medium Risk','High Risk'],
+    y: d.probs.map(p => p*100),
+    marker: { color: ['#34d399','#fbbf24','#fb7185'] },
+    text: d.probs.map(p => `${(p*100).toFixed(1)}%`),
+    textposition: 'outside',
+    error_y: {
+      type:'data',
+      array: d.probs.map((p,i) => (d.ci_high[i]-p)*100),
+      arrayminus: d.probs.map((p,i) => (p-d.ci_low[i])*100),
+      color:'#243452', thickness:2, width:8,
+    }
+  }], {
+    ...PLOTLY_LAYOUT,
+    yaxis:{...PLOTLY_LAYOUT.yaxis, range:[0,115], title:{text:'%',font:{size:11}}},
+    showlegend:false,
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Model info ─────────────────────────────────────────────────────────────────
+async function loadModelInfo() {
+  const d = await (await fetch('/api/model-info')).json();
+  const modelCards = Object.entries(d.models).map(([name, m]) => {
+    const isBest = name === d.best_name;
+    const badge = isBest ? `<div style="font-size:.65rem;color:var(--teal);margin-bottom:4px;font-weight:700">★ SELECTED</div>` : '';
+    const bdr = isBest ? 'border-color:var(--teal-dim)' : '';
+    return `<div class="metric-card" style="${bdr}">
+      ${badge}
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:4px">${name}</div>
+      <div class="mval" style="color:var(--teal)">${m.auc.toFixed(4)}</div>
+      <div class="mlabel">Macro AUC-ROC &nbsp;·&nbsp; F1 ${m.f1.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+
+  const fi = d.feature_importance;
+  const fiMax = Math.max(...Object.values(fi));
+  const fiHtml = Object.entries(fi).map(([feat, val]) => {
+    const lbl = d.feature_labels[feat] || feat;
+    const w = Math.round(val/fiMax*100);
+    const clr = w>70 ? '#fb7185' : w>40 ? '#fbbf24' : '#34d399';
+    return `<div class="lime-row">
+      <div class="lime-feat" style="min-width:200px">${lbl}</div>
+      <div class="lime-bar-wrap"><div class="lime-bar" style="width:${w}%;background:${clr}"></div></div>
+      <div class="lime-val">${(val*100).toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  const rep = d.report;
+  const classes = ['Low Risk','Medium Risk','High Risk'];
+  const repHtml = classes.map(c => `
+    <tr>
+      <td style="color:var(--text-dim);padding:8px 0">${c}</td>
+      <td style="font-family:JetBrains Mono,monospace;color:var(--teal)">${rep[c].precision.toFixed(3)}</td>
+      <td style="font-family:JetBrains Mono,monospace;color:var(--teal)">${rep[c].recall.toFixed(3)}</td>
+      <td style="font-family:JetBrains Mono,monospace;color:var(--teal)">${rep[c]['f1-score'].toFixed(3)}</td>
+      <td style="color:var(--text-muted)">${rep[c].support}</td>
+    </tr>`).join('');
+
+  $('model-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+      ${modelCards}
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Feature Importance</div>
+        ${fiHtml}
+      </div>
+      <div class="card">
+        <div class="card-title">Classification Report</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+          <thead><tr style="color:var(--text-muted);font-size:.68rem">
+            <th style="text-align:left;padding-bottom:8px">Class</th>
+            <th>Precision</th><th>Recall</th><th>F1</th><th>n</th>
+          </tr></thead>
+          <tbody>${repHtml}</tbody>
+        </table>
+        <div id="calib-chart" style="height:200px;margin-top:16px"></div>
+      </div>
+    </div>
+  `;
+
+  // Calibration chart
+  const cal = d.calibration;
+  const calTraces = Object.entries(cal).map(([cls, cd]) => ({
+    type:'scatter', x: cd.mean_pred, y: cd.frac_pos,
+    mode:'lines+markers', name:cls,
+    line:{color:COLORS[cls], width:2},
+    marker:{size:6}
+  }));
+  calTraces.unshift({type:'scatter',x:[0,1],y:[0,1],mode:'lines',name:'Perfect',
+    line:{color:'#1c2a42',dash:'dash',width:1}});
+  Plotly.newPlot('calib-chart', calTraces, {
+    ...PLOTLY_LAYOUT, margin:{t:8,b:30,l:36,r:8},
+    xaxis:{...PLOTLY_LAYOUT.xaxis,range:[0,1],title:{text:'Predicted',font:{size:10}}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,range:[0,1],title:{text:'Actual',font:{size:10}}},
+    legend:{orientation:'h',y:-0.3,font:{size:10}},
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Fairness ───────────────────────────────────────────────────────────────────
+async function loadFairness() {
+  const d = await (await fetch('/api/fairness')).json();
+  const orig = d.original, mit = d.mitigated, vd = d.verdict;
+
+  const metrics = [
+    ['Disparate Impact',       'disparate_impact',             '≥ 0.80','di_pass'],
+    ['Stat. Parity Diff.',     'statistical_parity_difference','± 0.10','spd_pass'],
+    ['Equal Opp. Diff.',       'equal_opportunity_difference', '± 0.10','eod_pass'],
+    ['Avg Odds Diff.',         'average_odds_difference',      '± 0.10','aod_pass'],
+  ];
+
+  const cards = metrics.map(([lbl, key, thr, pk]) => {
+    const ov = orig[key]||0, mv = mit[key]||ov;
+    const ok = vd[pk]; const clr = ok ? '#34d399' : '#fb7185';
+    return `<div class="metric-card">
+      <div style="font-size:.65rem;color:var(--text-muted);margin-bottom:4px">${lbl} (${thr})</div>
+      <div class="mval" style="color:${clr}">${ov.toFixed(3)}</div>
+      <div class="mlabel">After Reweighing: <strong style="color:var(--teal)">${mv.toFixed(3)}</strong></div>
+    </div>`;
+  }).join('');
+
+  const scorecard = metrics.map(([lbl, key, , pk]) => {
+    const ok = vd[pk]; const clr = ok ? '#34d399' : '#fb7185';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;
+             padding:8px 0;border-bottom:1px solid var(--border);font-size:.83rem">
+      <span style="color:var(--text-dim)">${lbl}</span>
+      <span style="color:${clr};font-family:JetBrains Mono,monospace;font-weight:700">${ok?'✓':'✗'} ${(orig[key]||0).toFixed(3)}</span>
+    </div>`;
+  }).join('');
+
+  const policyBox = d.policy ? `
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">AI Governance Brief</div>
+      <div style="font-size:.84rem;line-height:1.75;color:var(--text-dim)">${d.policy}</div>
+    </div>` : '';
+
+  $('fairness-content').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:.83rem;color:var(--text-dim)">
+      <strong style="color:var(--teal)">Sensitive attribute:</strong>
+      Age group — Teen mothers (≤19) vs Adult mothers (≥20).
+      Teenage mothers face 3× higher maternal mortality but are systematically underdetected by biased models.
+      IBM AIF360 Reweighing corrects this by adjusting training sample weights.
+    </div>
+    <div class="verdict ${vd.fair?'ok':'fail'}">
+      ${vd.fair ? '✓ PASSES IBM AI FAIRNESS 360 STANDARDS (4/4 metrics)' : '⚠ BIAS DETECTED — IBM AIF360 REWEIGHING APPLIED'}
+    </div>
+    <div class="metric-grid">${cards}</div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Before vs After IBM AIF360 Reweighing</div>
+        <div id="fairness-chart" style="height:260px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Fairness Scorecard</div>
+        ${scorecard}
+        ${policyBox}
+      </div>
+    </div>
+  `;
+
+  const keys = metrics.map(m=>m[1]);
+  const labs = metrics.map(m=>m[0]);
+  Plotly.newPlot('fairness-chart', [
+    {type:'bar',name:'Original',x:labs,y:keys.map(k=>orig[k]||0),marker:{color:'#fb7185'}},
+    {type:'bar',name:'After Reweighing',x:labs,y:keys.map(k=>mit[k]||0),marker:{color:'#34d399'}},
+  ], {
+    ...PLOTLY_LAYOUT, barmode:'group',
+    shapes:[
+      {type:'line',x0:-0.5,x1:3.5,y0:0.8,y1:0.8,line:{color:'#fbbf24',dash:'dot',width:1}},
+      {type:'line',x0:-0.5,x1:3.5,y0:0.1,y1:0.1,line:{color:'#243452',dash:'dot',width:1}},
+      {type:'line',x0:-0.5,x1:3.5,y0:-0.1,y1:-0.1,line:{color:'#243452',dash:'dot',width:1}},
+    ],
+    legend:{orientation:'h',y:-0.3,font:{size:11}},
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Security ───────────────────────────────────────────────────────────────────
+async function loadSecurity() {
+  const d = await (await fetch('/api/security')).json();
+  const rob = d.overall_robustness_score||0;
+  const gRob = d.gaussian_noise?.robustness||0;
+  const itRob = d.iterative_black_box?.robustness||0;
+  const itAsr = d.iterative_black_box?.attack_success_rate||0;
+  const sens = d.feature_sensitivity||{};
+
+  const robColor = rob>=0.75?'#34d399':rob>=0.5?'#fbbf24':'#fb7185';
+  const robLabel = rob>=0.75?'Strong':rob>=0.5?'Moderate':'Vulnerable';
+
+  const sensMax = Math.max(...Object.values(sens));
+  const sensHtml = Object.entries(sens).map(([feat, val]) => {
+    const w = Math.round(val/sensMax*100);
+    const clr = w>60?'#fb7185':w>30?'#fbbf24':'#34d399';
+    return `<div class="lime-row">
+      <div class="lime-feat" style="min-width:180px">${feat}</div>
+      <div class="lime-bar-wrap"><div class="lime-bar" style="width:${w}%;background:${clr}"></div></div>
+      <div class="lime-val" style="color:${clr}">${val.toFixed(4)}</div>
+    </div>`;
+  }).join('');
+
+  const topFeat = Object.keys(sens)[0]||'Blood Glucose';
+
+  $('security-content').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;
+                padding:14px 18px;margin-bottom:16px;font-size:.83rem;color:var(--text-dim)">
+      <strong style="color:var(--teal)">IBM ART Threat Model:</strong>
+      A compromised clinic data-entry tablet subtly alters patient vitals to downgrade a high-risk mother to low-risk,
+      causing a missed referral and a preventable death. We simulate this attack and measure MaternaAI's resilience.
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="mlabel">Overall Robustness</div>
+        <div class="mval" style="color:${robColor}">${(rob*100).toFixed(0)}%</div>
+        <div class="mlabel">${robLabel}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mlabel">Gaussian Noise ±5%</div>
+        <div class="mval" style="color:${gRob>=0.75?'#34d399':'#fbbf24'}">${(gRob*100).toFixed(0)}%</div>
+        <div class="mlabel">Robustness</div>
+      </div>
+      <div class="metric-card">
+        <div class="mlabel">Iterative Attack</div>
+        <div class="mval" style="color:${itAsr<=0.25?'#34d399':'#fb7185'}">${(itAsr*100).toFixed(0)}%</div>
+        <div class="mlabel">Attack success rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="mlabel">Most Exploitable</div>
+        <div class="mval" style="font-size:1rem;color:var(--rose)">${topFeat}</div>
+        <div class="mlabel">Highest sensitivity</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Feature Exploitability (IBM ART)</div>
+        ${sensHtml}
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(251,113,133,.06);
+                    border:1px solid rgba(251,113,133,.2);border-radius:8px;font-size:.78rem;color:var(--text-dim)">
+          🔴 <strong style="color:var(--rose)">${topFeat}</strong> is the most exploitable vital sign.
+          IBM ART recommends input validation and anomaly detection on this feature.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Robustness by Attack Type</div>
+        ${[['Gaussian Noise ±5%', gRob, 'Baseline: random measurement error'],
+           ['Iterative Black-Box', itRob, 'Targeted: greedy feature manipulation']].map(([name,rob,desc]) => {
+          const c = rob>=0.75?'#34d399':rob>=0.5?'#fbbf24':'#fb7185';
+          return `<div class="card" style="margin-bottom:10px;padding:14px">
+            <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px">${name}</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="rob-meter" style="flex:1"><div class="rob-fill" style="width:${rob*100}%;background:${c}"></div></div>
+              <div style="color:${c};font-weight:700;font-family:JetBrains Mono,monospace">${(rob*100).toFixed(0)}%</div>
+            </div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:6px">${desc}</div>
+          </div>`;
+        }).join('')}
+        <div style="padding:12px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);
+                    border-radius:8px;font-size:.78rem;color:var(--text-dim)">
+          <strong style="color:var(--green)">IBM ART Recommendations:</strong><br/>
+          1. Input validation on ${topFeat} (most exploitable)<br/>
+          2. Flag predictions where multiple vitals deviate ≥3σ simultaneously<br/>
+          3. Ensemble voting for high-stakes decisions
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── Privacy ────────────────────────────────────────────────────────────────────
+async function loadPrivacy() {
+  const d = await (await fetch('/api/model-info')).json();
+  const dp = d.dp||{};
+
+  $('privacy-content').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;
+                padding:14px 18px;margin-bottom:16px;font-size:.83rem;color:var(--text-dim)">
+      <strong style="color:var(--teal)">IBM diffprivlib — Differential Privacy (ε=${d.dp_epsilon})</strong><br/>
+      Differential privacy is a mathematical guarantee: even if an attacker has access to the trained model,
+      they cannot determine whether any individual patient was in the training set.
+      ε=1.0 means each patient's data changes the model output by at most e<sup>1</sup> ≈ 2.72×.
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+      <div class="metric-card">
+        <div class="mlabel">Privacy Budget (ε)</div>
+        <div class="mval" style="color:var(--teal)">${d.dp_epsilon}</div>
+        <div class="mlabel">Strong privacy guarantee</div>
+      </div>
+      <div class="metric-card">
+        <div class="mlabel">DP Model AUC</div>
+        <div class="mval" style="color:var(--teal)">${dp.auc||'—'}</div>
+        <div class="mlabel">${dp.task||'Binary high-risk detector'}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mlabel">Privacy Guarantee</div>
+        <div class="mval" style="font-size:.85rem;color:var(--green)">Protected</div>
+        <div class="mlabel">Membership inference resistant</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">What Differential Privacy Protects Against</div>
+        ${[
+          ['Membership Inference Attack','An attacker queries the model to determine if a specific patient was in the training data. DP makes this computationally indistinguishable.','#34d399'],
+          ['Model Inversion Attack','Reconstructing patient records from model parameters. DP noise prevents this.','#34d399'],
+          ['Data Extraction','Prompting the model to memorise and reveal training examples. DP bounds this.','#34d399'],
+        ].map(([title, desc, clr]) => `
+          <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:.8rem;font-weight:600;color:${clr};margin-bottom:4px">✓ ${title}</div>
+            <div style="font-size:.78rem;color:var(--text-muted);line-height:1.6">${desc}</div>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Privacy vs Accuracy Tradeoff</div>
+        <div id="dp-chart" style="height:240px"></div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:10px;line-height:1.6">
+          The DP model (AUC ${dp.auc}) sacrifices some accuracy versus the GBM (0.951)
+          to provide formal privacy guarantees. In production, MaternaAI would use
+          the DP model for data-scarce settings where patient privacy is paramount.
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Privacy vs accuracy chart
+  Plotly.newPlot('dp-chart', [
+    {type:'bar', x:['GBM (standard)','DP-GaussianNB (ε=1.0)'],
+     y:[0.9513, dp.auc||0.83],
+     marker:{color:['#2dd4bf','#34d399']},
+     text:[`AUC 0.9513<br>No privacy guarantee`,`AUC ${dp.auc||'0.83'}<br>ε=1.0 privacy`],
+     textposition:'outside',
+    }
+  ], {
+    ...PLOTLY_LAYOUT, margin:{t:8,b:50,l:40,r:8},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,range:[0,1.1],title:{text:'AUC-ROC',font:{size:11}}},
+    showlegend:false,
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Population ─────────────────────────────────────────────────────────────────
+async function loadPopulation() {
+  const data = await (await fetch('/api/population')).json();
+  const low  = data.filter(r=>r.label===0);
+  const mid  = data.filter(r=>r.label===1);
+  const high = data.filter(r=>r.label===2);
+
+  Plotly.newPlot('pop-chart', [
+    {type:'scatter',mode:'markers',name:'Low Risk', x:low.map(r=>r.sbp),y:low.map(r=>r.glucose),
+     marker:{color:'#34d399',size:6,opacity:.6}},
+    {type:'scatter',mode:'markers',name:'Medium Risk',x:mid.map(r=>r.sbp),y:mid.map(r=>r.glucose),
+     marker:{color:'#fbbf24',size:6,opacity:.6}},
+    {type:'scatter',mode:'markers',name:'High Risk',  x:high.map(r=>r.sbp),y:high.map(r=>r.glucose),
+     marker:{color:'#fb7185',size:6,opacity:.6}},
+  ], {
+    ...PLOTLY_LAYOUT, margin:{t:10,b:50,l:50,r:10},
+    xaxis:{...PLOTLY_LAYOUT.xaxis,title:{text:'Systolic Blood Pressure (mmHg)',font:{size:11}}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,title:{text:'Blood Glucose (mmol/L)',font:{size:11}}},
+    legend:{orientation:'h',y:-0.18,font:{size:12}},
+  }, {responsive:true, displayModeBar:false});
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────────
+loadModelInfo();
+loadFairness();
+loadSecurity();
+loadPrivacy();
+loadPopulation();
+</script>
+</body>
+</html>

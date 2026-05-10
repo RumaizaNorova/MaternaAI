@@ -1,3 +1,4 @@
+import warnings; warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
@@ -8,6 +9,45 @@ from sklearn.metrics import classification_report, roc_auc_score, f1_score
 from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.pipeline import Pipeline
 from data import FEATURE_COLS, RISK_LABEL
+
+# IBM diffprivlib — Differentially Private Gaussian Naive Bayes (binary: high-risk detector)
+try:
+    from diffprivlib.models import GaussianNB as DPGaussianNB
+    _DP_AVAILABLE = True
+except ImportError:
+    _DP_AVAILABLE = False
+
+DP_EPSILON = 1.0  # Privacy budget (ε=1.0: strong privacy guarantee)
+
+def train_dp_model(X_train, y_train, X_test, y_test):
+    """
+    IBM diffprivlib: DP-GaussianNB binary high-risk detector.
+    ε=1.0 means each patient record changes the model output by at most e^1 ≈ 2.7×.
+    Protects against membership inference attacks on patient training data.
+    """
+    if not _DP_AVAILABLE:
+        return None
+    try:
+        # Binary task: high-risk (1) vs not high-risk (0)
+        y_bin_tr = (y_train == 2).astype(int)
+        y_bin_te = (y_test  == 2).astype(int)
+        bounds = (X_train.min().values, X_train.max().values)
+        dp_model = DPGaussianNB(bounds=bounds, epsilon=DP_EPSILON)
+        dp_model.fit(X_train.values, y_bin_tr.values)
+        y_pred = dp_model.predict(X_test.values)
+        y_prob = dp_model.predict_proba(X_test.values)[:, 1]
+        auc = roc_auc_score(y_bin_te, y_prob)
+        f1 = f1_score(y_bin_te, y_pred, average="binary")
+        return {
+            "model": dp_model,
+            "auc": round(auc, 4),
+            "f1": round(f1, 4),
+            "epsilon": DP_EPSILON,
+            "task": "High-risk binary detector",
+            "guarantee": f"ε={DP_EPSILON}: each patient's data changes model output ≤{np.e**DP_EPSILON:.2f}×",
+        }
+    except Exception as e:
+        return {"error": str(e)[:120]}
 
 def train_models(df: pd.DataFrame):
     X = df[FEATURE_COLS]
@@ -51,7 +91,11 @@ def train_models(df: pd.DataFrame):
         }
 
     best_name = max(results, key=lambda k: results[k]["auc"])
-    return results, best_name, X_train, X_test, y_train, y_test
+
+    # IBM diffprivlib: train DP model alongside standard models
+    dp_result = train_dp_model(X_train, y_train, X_test, y_test)
+
+    return results, best_name, X_train, X_test, y_train, y_test, dp_result
 
 def predict_risk(model, vitals: dict) -> tuple[np.ndarray, int]:
     """Returns (probabilities[low,mid,high], predicted_class)."""
