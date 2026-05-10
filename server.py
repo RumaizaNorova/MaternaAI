@@ -4,6 +4,7 @@ Four IBM open-source libraries: AIF360, ART, AIX360, diffprivlib.
 """
 import warnings; warnings.filterwarnings("ignore")
 import os
+import subprocess
 from flask import Flask, render_template, jsonify, request
 import numpy as np
 import pandas as pd
@@ -17,6 +18,22 @@ from explainability import lime_explain, counterfactual_explain
 from granite import explain_risk, governance_policy
 
 app = Flask(__name__)
+
+# Expose a build id in the UI to make deploy/debug obvious
+def _build_id() -> str:
+    env = os.environ.get("BUILD_ID")
+    if env:
+        return env
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except Exception:
+        return "unknown"
+
+BUILD_ID = _build_id()
 
 # ── Startup pipeline ───────────────────────────────────────────────────────────
 print("MaternaAI — initialising pipeline…")
@@ -67,7 +84,7 @@ def _safe(obj):
 # ── Routes ─────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", build_id=BUILD_ID)
 
 
 @app.route("/api/predict", methods=["POST"])

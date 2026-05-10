@@ -10,41 +10,56 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  /* Calm clinic + modern tech */
-  --bg:#070b14;
-  --surface:#0c1222;
-  --surface2:#0f172a;
-  --border:#18233a;
-  --border2:#243452;
-  --teal:#2dd4bf;
-  --teal-dim:#15877a;
-  --teal-glow:rgba(45,212,191,0.10);
+  /* Softer dark: techy but not neon */
+  --bg:#0b1020;
+  --surface:#0f162b;
+  --surface2:#111c36;
+  --border:rgba(255,255,255,.08);
+  --border2:rgba(255,255,255,.12);
+
+  --teal:#5eead4;          /* softer accent */
+  --teal-dim:#2dd4bf;
+  --teal-glow:rgba(94,234,212,0.10);
+
   --rose:#fb7185;
-  --rose-glow:rgba(251,113,133,0.10);
+  --rose-glow:rgba(251,113,133,0.08);
   --amber:#fbbf24;
   --green:#34d399;
-  --text:#e6edf7;
-  --text-muted:#7b8aa6;
-  --text-dim:#a9b6cf;
-  --shadow: 0 14px 38px rgba(0,0,0,.35);
-  --ring: 0 0 0 3px rgba(45,212,191,.18);
+
+  --text:#eaf0ff;
+  --text-muted:#93a4c7;
+  --text-dim:#c3cde3;
+
+  --shadow: 0 18px 46px rgba(0,0,0,.38);
+  --ring: 0 0 0 3px rgba(94,234,212,.20);
 }
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 a{color:inherit;text-decoration:none}
-button:focus-visible, input:focus-visible { outline:none; box-shadow: var(--ring); border-color: rgba(45,212,191,.45); }
+button:focus-visible, input:focus-visible { outline:none; box-shadow: var(--ring); border-color: rgba(94,234,212,.45); }
+::selection{background:rgba(94,234,212,.22)}
 
 /* ── Nav ── */
 nav{
   position:sticky;top:0;z-index:100;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 40px;height:60px;
-  background:rgba(8,13,24,0.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);
+  background:rgba(11,16,32,0.78);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
 .nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem}
 .nav-logo svg{color:var(--teal)}
 .nav-logo span{color:var(--teal)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-mini{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);
+  color:var(--text-muted);
+  font-size:.76rem;
+}
+.nav-mini b{color:var(--text-dim)}
 .nav-pills{display:flex;gap:6px}
 .nav-pill{
   padding:5px 14px;border-radius:20px;font-size:.78rem;font-weight:500;cursor:pointer;
@@ -55,7 +70,7 @@ nav{
 .nav-tags{display:flex;gap:6px}
 .ibm-tag{
   padding:3px 10px;border-radius:4px;font-size:.68rem;font-weight:600;letter-spacing:.04em;
-  background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);color:var(--teal);
+  background:rgba(94,234,212,.07);border:1px solid rgba(94,234,212,.16);color:var(--teal);
   font-family:'JetBrains Mono',monospace;
 }
 
@@ -63,10 +78,10 @@ nav{
 .hero{
   padding:60px 40px 48px;
   background:
-    radial-gradient(900px 500px at 70% -10%, rgba(45,212,191,.09) 0%, transparent 60%),
-    radial-gradient(700px 420px at 15% 0%, rgba(251,113,133,.08) 0%, transparent 55%),
-    linear-gradient(135deg,#070b14 0%,#0a1428 42%,#07101f 100%);
-  border-bottom:1px solid var(--border);
+    radial-gradient(900px 520px at 68% -12%, rgba(94,234,212,.10) 0%, transparent 62%),
+    radial-gradient(760px 460px at 12% -8%, rgba(167,139,250,.10) 0%, transparent 60%),
+    linear-gradient(135deg,#0b1020 0%,#0b1632 44%,#0b1020 100%);
+  border-bottom:1px solid rgba(255,255,255,.06);
   position:relative;overflow:hidden;
 }
 .hero::before{
@@ -87,34 +102,37 @@ nav{
 .pill{
   display:inline-flex;align-items:center;gap:8px;
   padding:6px 12px;border-radius:999px;
-  background:rgba(45,212,191,.06); border:1px solid rgba(45,212,191,.18);
+  background:rgba(94,234,212,.06); border:1px solid rgba(255,255,255,.08);
   color:var(--text-dim); font-weight:600;
 }
-.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(45,212,191,.14)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(94,234,212,.14)}
 .pill.warn{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.20)}
 .pill.warn .dot{background:var(--amber);box-shadow:0 0 0 3px rgba(251,191,36,.15)}
-.hero-stats{display:flex;gap:48px;flex-wrap:wrap}
-.hstat .num{font-size:2rem;font-weight:700;color:var(--rose);font-variant-numeric:tabular-nums}
+.hero-stats{display:flex;gap:44px;flex-wrap:wrap;margin-top:20px}
+.hstat .num{font-size:1.9rem;font-weight:750;color:var(--text);font-variant-numeric:tabular-nums}
 .hstat .num.teal{color:var(--teal)}
 .hstat .lab{font-size:.72rem;color:var(--text-muted);margin-top:2px}
 
 /* ── Tool strip ── */
 .tool-strip{
   display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-  padding:14px 40px;background:var(--bg);border-bottom:1px solid var(--border);
+  padding:12px 40px;background:rgba(255,255,255,.01);border-bottom:1px solid rgba(255,255,255,.06);
 }
 .tool-strip .label{font-size:.68rem;color:var(--text-muted);margin-right:4px;text-transform:uppercase;letter-spacing:.08em}
+.tool-strip .ibm-tag{opacity:.9}
 
 /* ── Main layout ── */
 .main{display:grid;grid-template-columns:360px 1fr;min-height:calc(100vh - 240px)}
 .sidebar{
-  border-right:1px solid var(--border);padding:28px 24px;
+  border-right:1px solid rgba(255,255,255,.06);padding:28px 24px;
   position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;
 }
 .content{padding:28px 32px}
+.content-inner{max-width:980px}
 
 /* ── Form ── */
 .form-title{font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:20px}
+.form-sub{font-size:.78rem;color:var(--text-muted);margin:-8px 0 18px;line-height:1.6}
 .form-group{margin-bottom:18px}
 .form-group label{display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:7px;font-weight:500}
 .form-group label span{color:var(--text-dim);font-weight:400;margin-left:4px}
@@ -122,7 +140,7 @@ nav{
 
 input[type=range]{
   width:100%;height:4px;appearance:none;-webkit-appearance:none;
-  background:var(--border2);border-radius:2px;cursor:pointer;outline:none;
+  background:rgba(255,255,255,.12);border-radius:999px;cursor:pointer;outline:none;
 }
 input[type=range]::-webkit-slider-thumb{
   -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
@@ -135,15 +153,16 @@ input[type=range]::-webkit-slider-thumb{
 }
 
 input[type=number]{
-  width:100%;padding:9px 12px;background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:.85rem;outline:none;
+  width:100%;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;color:var(--text);font-family:'Inter',sans-serif;font-size:.9rem;outline:none;
 }
-input[type=number]:focus{border-color:var(--teal-dim)}
+input[type=number]:focus{border-color:rgba(94,234,212,.35)}
+.field-hint{font-size:.72rem;color:var(--text-muted);margin-top:6px}
 
 .btn-assess{
   width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,var(--teal),#0d9488);
-  color:#0d1424;font-weight:700;font-size:.92rem;font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,rgba(94,234,212,1),rgba(45,212,191,1));
+  color:#061018;font-weight:800;font-size:.92rem;font-family:'Inter',sans-serif;
   margin-top:10px;transition:opacity .2s;position:relative;
 }
 .btn-assess:hover{opacity:.88}
@@ -194,6 +213,33 @@ input[type=number]:focus{border-color:var(--teal-dim)}
   background:rgba(255,255,255,.02);
 }
 
+/* ── Next steps panel ── */
+.steps-card{
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  padding:16px 18px;
+}
+.steps-card h3{
+  font-size:.78rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.steps-card ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.steps-card li{display:flex;gap:10px;align-items:flex-start;color:var(--text-dim);font-size:.86rem;line-height:1.55}
+.steps-card .bullet{
+  width:18px;height:18px;border-radius:6px;
+  background:rgba(94,234,212,.10);
+  border:1px solid rgba(94,234,212,.22);
+  color:var(--teal);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.78rem;flex:0 0 auto;margin-top:1px;
+}
+.steps-card .meta{font-size:.74rem;color:var(--text-muted);margin-top:8px}
+
 /* ── Risk banner ── */
 .risk-banner{
   border-radius:14px;padding:24px 28px;margin-bottom:24px;border:1px solid;
@@ -206,6 +252,7 @@ input[type=number]:focus{border-color:var(--teal-dim)}
 .risk-mid  .risk-label-text{color:var(--amber)}
 .risk-high .risk-label-text{color:var(--rose)}
 .risk-sub{font-size:.82rem;color:var(--text-muted);margin-bottom:16px}
+.risk-summary{font-size:.9rem;color:var(--text-dim);margin-top:10px;line-height:1.65}
 .prob-pills{display:flex;gap:8px}
 .prob-pill{
   flex:1;padding:10px 8px;border-radius:8px;text-align:center;
@@ -232,8 +279,11 @@ input[type=number]:focus{border-color:var(--teal-dim)}
 
 /* ── Card ── */
 .card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:20px;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:20px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.03);
 }
 .card-title{
   font-size:.62rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
@@ -279,6 +329,7 @@ input[type=number]:focus{border-color:var(--teal-dim)}
 /* ── Metric cards ── */
 .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.metric-card{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px}
 .metric-card .mval{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
 .metric-card .mlabel{font-size:.68rem;color:var(--text-muted);margin-top:5px}
 .metric-card .msub{font-size:.72rem;color:var(--text-muted);margin-top:6px}
@@ -316,6 +367,7 @@ footer{
   .sidebar{position:static;height:auto}
   .metric-grid{grid-template-columns:repeat(2,1fr)}
   .two-col{grid-template-columns:1fr}
+  .nav-tags{display:none}
 }
 </style>
 </head>
@@ -330,11 +382,14 @@ footer{
     </svg>
     Materna<span>AI</span>
   </div>
-  <div class="nav-tags">
-    <span class="ibm-tag">AIF360</span>
-    <span class="ibm-tag">ART</span>
-    <span class="ibm-tag">AIX360</span>
-    <span class="ibm-tag">diffprivlib</span>
+  <div class="nav-right">
+    <span class="nav-mini"><b>Clinic mode</b> · decision support</span>
+    <div class="nav-tags">
+      <span class="ibm-tag">AIF360</span>
+      <span class="ibm-tag">ART</span>
+      <span class="ibm-tag">AIX360</span>
+      <span class="ibm-tag">diffprivlib</span>
+    </div>
   </div>
 </nav>
 
@@ -373,6 +428,7 @@ footer{
   <!-- Sidebar: patient form -->
   <aside class="sidebar">
     <div class="form-title">Patient Vital Signs</div>
+    <div class="form-sub">Use the best available readings. If confidence is low, re-measure and reassess.</div>
     <div class="form-group">
       <label>Age <span>(years)</span><span class="range-val" id="v-age">25</span></label>
       <input type="range" id="age" min="10" max="49" value="25" oninput="upd('age','v-age')"/>
@@ -393,6 +449,7 @@ footer{
     <div class="form-group">
       <label>Blood Glucose <span>(mmol/L)</span></label>
       <input type="number" id="glucose" value="7.8" min="6.0" max="19.0" step="0.1"/>
+      <div class="field-hint">If unsure, use a fasting value when possible.</div>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -421,6 +478,7 @@ footer{
 
   <!-- Content: results -->
   <div class="content">
+    <div class="content-inner">
     <!-- Result area -->
     <div id="result-area">
       <div class="result-placeholder">
@@ -473,6 +531,7 @@ footer{
     <div class="section-panel" id="tab-population">
       <div id="pop-chart" style="height:360px"></div>
     </div>
+    </div>
   </div>
 </div>
 
@@ -480,6 +539,9 @@ footer{
   MaternaAI &nbsp;·&nbsp; IBM Z × UNSA Sheridan Hackathon 2026 &nbsp;·&nbsp;
   IBM AI Fairness 360 &nbsp;·&nbsp; IBM ART &nbsp;·&nbsp; IBM AIX360 &nbsp;·&nbsp; IBM diffprivlib
   &nbsp;·&nbsp; UN SDG 3 + SDG 10
+  <span style="display:inline-block;margin-left:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.02);font-family:'JetBrains Mono',monospace;color:var(--text-muted)">
+    build {{ build_id }}
+  </span>
 </footer>
 
 <script>
@@ -532,6 +594,12 @@ async function assess() {
   };
 
   try {
+    // Basic client-side sanity checks (still validated server-side)
+    const invalid =
+      !Number.isFinite(payload.age) || !Number.isFinite(payload.systolic) || !Number.isFinite(payload.diastolic) ||
+      !Number.isFinite(payload.glucose) || !Number.isFinite(payload.temp) || !Number.isFinite(payload.hr);
+    if (invalid) throw new Error('Please enter valid numeric vitals.');
+
     const r = await fetch('/api/predict', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
@@ -540,7 +608,11 @@ async function assess() {
     if (d.error) throw new Error(d.error);
     renderResult(d, payload);
   } catch(e) {
-    $('result-area').innerHTML = `<div class="verdict fail">Error: ${e.message}</div>`;
+    $('result-area').innerHTML = `
+      <div class="verdict fail">
+        Something went wrong: ${e.message}<br/>
+        <span style="font-weight:500;color:var(--text-muted)">Check entries and try again.</span>
+      </div>`;
   } finally {
     btn.classList.remove('loading');
     btn.innerHTML = 'Assess Risk';
@@ -615,6 +687,45 @@ function renderResult(d, vitals) {
       </div>
     </div>` : '';
 
+  const nextSteps = (() => {
+    const low = [
+      {t:'Continue routine monitoring.', s:'Document vitals and re-check if symptoms change.'},
+      {t:'Review red flags with the patient.', s:'Headache, visual changes, bleeding, fever, reduced fetal movement.'},
+      {t:'Plan follow-up.', s:'Encourage return visit and ensure access to transport if needed.'},
+    ];
+    const mid = [
+      {t:'Repeat key measurements.', s:'Re-check blood pressure, glucose, and temperature if clinically appropriate.'},
+      {t:'Consider escalation criteria.', s:'Discuss referral pathway or higher-level review depending on local protocol.'},
+      {t:'Address modifiable risks.', s:'Hydration, rest, nutrition, medication adherence where applicable.'},
+    ];
+    const high = [
+      {t:'Urgent clinical review / referral.', s:'Treat as time-sensitive. Follow local emergency protocol.'},
+      {t:'Confirm readings and assess symptoms.', s:'Re-measure vitals; screen for severe headache, bleeding, fever, dyspnea.'},
+      {t:'Prepare handoff summary.', s:'Share vitals, risk label, and top contributing features with receiving team.'},
+    ];
+    const steps = d.pred === 0 ? low : d.pred === 1 ? mid : high;
+    const add = [];
+    if (d.confidence < 0.75) add.push({t:'Low model confidence.', s:'Re-measure vitals, check data entry, and reassess.'});
+    if (d.is_teen) add.push({t:'Teen patient.', s:'Fairness mitigation is active; apply extra clinical caution and confirm context.'});
+    return [...add, ...steps].slice(0,4);
+  })();
+
+  const nextStepsHtml = `
+    <div class="steps-card">
+      <h3>Recommended next steps</h3>
+      <ul>
+        ${nextSteps.map((x,i)=>`
+          <li>
+            <span class="bullet">${i+1}</span>
+            <span><strong style="color:var(--text)">${x.t}</strong><br/>
+            <span style="color:var(--text-muted)">${x.s}</span></span>
+          </li>
+        `).join('')}
+      </ul>
+      <div class="meta">This guidance is informational only and must be adapted to local clinical protocol.</div>
+    </div>
+  `;
+
   $('result-area').innerHTML = `
     <div class="risk-banner risk-${css}">
       <div class="risk-label-text">${d.label}</div>
@@ -631,6 +742,9 @@ function renderResult(d, vitals) {
         ◉ ${(d.confidence*100).toFixed(0)}% confidence — ${d.interval_label}
       </span></div>
       ${teenHtml}
+      <div class="risk-summary">
+        Use this as decision support: review the uncertainty and the explanation, then follow your local protocol.
+      </div>
     </div>
 
     <div class="two-col">
@@ -639,10 +753,7 @@ function renderResult(d, vitals) {
         <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:10px">Feature contributions for <em>this specific patient</em></div>
         ${limeHtml}
       </div>
-      <div class="card">
-        <div class="card-title">Risk Probabilities + 90% Bootstrap CI</div>
-        <div id="prob-chart" style="height:210px"></div>
-      </div>
+      ${nextStepsHtml}
     </div>
 
     ${cfHtml}
@@ -656,16 +767,6 @@ function renderResult(d, vitals) {
     ${budgetHtml}
   `;
 
-  Plotly.newPlot('prob-chart', [{
-    type:'bar', x:['Low Risk','Medium Risk','High Risk'],
-    y:d.probs.map(p=>p*100), marker:{color:['#34d399','#fbbf24','#fb7185']},
-    text:d.probs.map(p=>`${(p*100).toFixed(1)}%`), textposition:'outside',
-    error_y:{type:'data',
-      array:d.probs.map((p,i)=>(d.ci_high[i]-p)*100),
-      arrayminus:d.probs.map((p,i)=>(p-d.ci_low[i])*100),
-      color:'#243452',thickness:2,width:8},
-  }],{...PLOTLY_LAYOUT,yaxis:{...PLOTLY_LAYOUT.yaxis,range:[0,115]},showlegend:false},
-  {responsive:true,displayModeBar:false});
 }
 
 // ── Model info ─────────────────────────────────────────────────────────────────
