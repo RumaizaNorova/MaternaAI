@@ -9,9 +9,10 @@ from sklearn.model_selection import train_test_split
 from data import FEATURE_COLS
 
 def calibrate_model(base_model, X_train, y_train):
-    """Platt scaling calibration — makes probabilities reliable."""
-    calibrated = CalibratedClassifierCV(base_model, method="isotonic", cv="prefit")
-    X_cal, _, y_cal, _ = train_test_split(X_train, y_train, test_size=0.3, random_state=7)
+    """Isotonic calibration on a held-out calibration set."""
+    X_fit, X_cal, y_fit, y_cal = train_test_split(X_train, y_train, test_size=0.3, random_state=7)
+    base_model.fit(X_fit, y_fit)
+    calibrated = CalibratedClassifierCV(base_model, method="isotonic", cv=3)
     calibrated.fit(X_cal, y_cal)
     return calibrated
 
