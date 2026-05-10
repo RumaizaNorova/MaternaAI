@@ -10,25 +10,29 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080d18;
-  --surface:#0d1424;
-  --surface2:#111929;
-  --border:#1c2a42;
+  /* Calm clinic + modern tech */
+  --bg:#070b14;
+  --surface:#0c1222;
+  --surface2:#0f172a;
+  --border:#18233a;
   --border2:#243452;
   --teal:#2dd4bf;
-  --teal-dim:#1a7a70;
-  --teal-glow:rgba(45,212,191,0.12);
+  --teal-dim:#15877a;
+  --teal-glow:rgba(45,212,191,0.10);
   --rose:#fb7185;
-  --rose-glow:rgba(251,113,133,0.12);
+  --rose-glow:rgba(251,113,133,0.10);
   --amber:#fbbf24;
   --green:#34d399;
-  --text:#e2e8f0;
-  --text-muted:#64748b;
-  --text-dim:#94a3b8;
+  --text:#e6edf7;
+  --text-muted:#7b8aa6;
+  --text-dim:#a9b6cf;
+  --shadow: 0 14px 38px rgba(0,0,0,.35);
+  --ring: 0 0 0 3px rgba(45,212,191,.18);
 }
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
 a{color:inherit;text-decoration:none}
+button:focus-visible, input:focus-visible { outline:none; box-shadow: var(--ring); border-color: rgba(45,212,191,.45); }
 
 /* ── Nav ── */
 nav{
@@ -58,7 +62,10 @@ nav{
 /* ── Hero ── */
 .hero{
   padding:60px 40px 48px;
-  background:linear-gradient(135deg,#080d18 0%,#0a1428 40%,#091220 100%);
+  background:
+    radial-gradient(900px 500px at 70% -10%, rgba(45,212,191,.09) 0%, transparent 60%),
+    radial-gradient(700px 420px at 15% 0%, rgba(251,113,133,.08) 0%, transparent 55%),
+    linear-gradient(135deg,#070b14 0%,#0a1428 42%,#07101f 100%);
   border-bottom:1px solid var(--border);
   position:relative;overflow:hidden;
 }
@@ -71,7 +78,21 @@ nav{
 .hero-eyebrow{font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:16px}
 .hero h1{font-size:2.6rem;font-weight:700;line-height:1.12;margin-bottom:14px}
 .hero h1 em{font-style:normal;color:var(--teal)}
-.hero p{font-size:.95rem;color:var(--text-dim);max-width:600px;line-height:1.7;margin-bottom:28px}
+.hero p{font-size:.98rem;color:var(--text-dim);max-width:720px;line-height:1.75;margin-bottom:22px}
+.hero .hero-support{
+  margin-top:16px;
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  color:var(--text-muted);font-size:.82rem
+}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;border-radius:999px;
+  background:rgba(45,212,191,.06); border:1px solid rgba(45,212,191,.18);
+  color:var(--text-dim); font-weight:600;
+}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px rgba(45,212,191,.14)}
+.pill.warn{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.20)}
+.pill.warn .dot{background:var(--amber);box-shadow:0 0 0 3px rgba(251,191,36,.15)}
 .hero-stats{display:flex;gap:48px;flex-wrap:wrap}
 .hstat .num{font-size:2rem;font-weight:700;color:var(--rose);font-variant-numeric:tabular-nums}
 .hstat .num.teal{color:var(--teal)}
@@ -127,12 +148,34 @@ input[type=number]:focus{border-color:var(--teal-dim)}
 }
 .btn-assess:hover{opacity:.88}
 .btn-assess.loading{opacity:.6;cursor:wait}
+.btn-sub{
+  width:100%;
+  margin-top:10px;
+  padding:11px 12px;border-radius:10px;
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  cursor:pointer;
+  font-weight:600;font-size:.85rem;
+  transition: all .15s;
+}
+.btn-sub:hover{ border-color: rgba(45,212,191,.35); background: rgba(45,212,191,.04); color: var(--text); }
 
 .sidebar-note{
   margin-top:20px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);
   border-radius:8px;font-size:.75rem;color:var(--text-muted);line-height:1.6;
 }
 .sidebar-note strong{color:var(--text-dim)}
+.sidebar-disclaimer{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:8px;
+  background:rgba(251,191,36,.06);
+  border:1px solid rgba(251,191,36,.22);
+  color:var(--text-dim);
+  font-size:.75rem;
+  line-height:1.6;
+}
 
 /* ── Result area ── */
 .result-placeholder{
@@ -141,6 +184,15 @@ input[type=number]:focus{border-color:var(--teal-dim)}
 }
 .result-placeholder svg{opacity:.2}
 .result-placeholder p{font-size:.88rem}
+.result-placeholder .steps{
+  margin-top:10px;
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  color:var(--text-muted);font-size:.78rem;
+}
+.step{
+  padding:6px 10px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,255,255,.02);
+}
 
 /* ── Risk banner ── */
 .risk-banner{
@@ -256,6 +308,10 @@ footer{
 
 /* ── Responsive ── */
 @media(max-width:900px){
+  nav{padding:0 18px}
+  .hero{padding:44px 18px 34px}
+  .tool-strip{padding:12px 18px}
+  .content{padding:22px 18px}
   .main{grid-template-columns:1fr}
   .sidebar{position:static;height:auto}
   .metric-grid{grid-template-columns:repeat(2,1fr)}
