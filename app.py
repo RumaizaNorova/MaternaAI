@@ -242,7 +242,7 @@ with tab1:
                                            colorscale=[[0,"#0d2137"],[0.5,"#0f62fe"],[1,"#ff8389"]],
                                            showscale=False)))
         fig.update_layout(height=300, **plotly_cfg()); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with c2:
         st.markdown('<div class="sh">Calibration Reliability (IBM UQ360 Methodology)</div>', unsafe_allow_html=True)
@@ -258,7 +258,7 @@ with tab1:
         fig2.update_layout(height=300, xaxis_title="Mean predicted prob",
                            yaxis_title="Fraction of positives", **plotly_cfg())
         ax(fig2); fig2.update_xaxes(range=[0,1]); fig2.update_yaxes(range=[0,1])
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, width="stretch")
 
     st.markdown('<div class="sh" style="margin-top:4px">Classification Report</div>', unsafe_allow_html=True)
     rep = results[best_name]["report"]
@@ -271,7 +271,7 @@ with tab1:
     }).set_index("")
     st.dataframe(rdf.style.format({"Precision":"{:.3f}","Recall":"{:.3f}","F1-Score":"{:.3f}"}
                  ).background_gradient(cmap="Blues",subset=["Precision","Recall","F1-Score"],axis=None),
-                 use_container_width=True)
+                 width="stretch")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 2 — Live Risk Assessment
@@ -292,7 +292,7 @@ with tab2:
     vitals = {"Age":age,"SystolicBP":sys_bp,"DiastolicBP":dia_bp,
               "BS":float(bs),"BodyTemp":float(temp),"HeartRate":hr}
 
-    if st.button("⚡  Assess with IBM MaternaAI", type="primary", use_container_width=True):
+    if st.button("⚡  Assess with IBM MaternaAI", type="primary", width="stretch"):
         probs, pred = predict_risk(cal_model, vitals)
         label = RISK_LABEL[pred]
         css   = ["rb-low","rb-mid","rb-high"][pred]
@@ -343,7 +343,7 @@ with tab2:
             fig.update_layout(height=260, **plotly_cfg(), showlegend=False,
                               yaxis_title="Probability (%)")
             fig.update_yaxes(range=[0,115]); ax(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         with c_right:
             st.markdown('<div class="sh">Vital Signs vs Population Median</div>', unsafe_allow_html=True)
@@ -361,7 +361,7 @@ with tab2:
                 polar=dict(radialaxis=dict(visible=True,gridcolor="#12192b",tickfont=dict(size=8,color="#4a5568"))),
                 legend=dict(orientation="h",y=-0.15,font_size=11))
             fig2.update(layout_showlegend=True)
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, width="stretch")
 
         # ── SHAP-style feature attribution ───────────────────────────────
         st.markdown('<div class="sh" style="margin-top:4px">Feature Attribution — Why This Risk Score?</div>',
@@ -471,7 +471,7 @@ with tab3:
         fig.add_hline(y=-0.1,line_dash="dot",line_color="#4a5568",line_width=1)
         fig.update_layout(barmode="group",height=300,legend=dict(orientation="h",y=-0.3,font_size=11),
                           **plotly_cfg()); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with c2:
         st.markdown('<div class="sh">Fairness Scorecard</div>', unsafe_allow_html=True)
@@ -544,7 +544,7 @@ with tab4:
                                    text=[f"{v:.4f}" for v in vals], textposition="outside"))
             fig.update_layout(height=280, yaxis_title="Sensitivity Score", **plotly_cfg())
             fig.update_yaxes(range=[0, max_s*1.3]); ax(fig)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
             top_feat = list(sens.keys())[0]
             st.markdown(f"""
@@ -610,7 +610,7 @@ with tab5:
                            labels={"color":"Risk","Age":"Age (years)"})
         fig.update_layout(height=290, **plotly_cfg(),
                           legend=dict(orientation="h",y=-0.3,font_size=11)); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     with c2:
         fig = px.scatter(df, x="SystolicBP", y="BS", color=df["label"].map(RISK_LABEL),
                          color_discrete_map=cm, opacity=.6, template="plotly_dark",
@@ -618,7 +618,7 @@ with tab5:
                          labels={"SystolicBP":"Systolic BP","BS":"Blood Glucose","color":"Risk"})
         fig.update_layout(height=290, **plotly_cfg(),
                           legend=dict(orientation="h",y=-0.3,font_size=11)); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     c1,c2 = st.columns(2)
     with c1:
@@ -633,14 +633,14 @@ with tab5:
         fig.update_layout(barmode="stack", title="Risk: Teen vs Adult Mothers",
                           yaxis_tickformat=".0%", height=290, **plotly_cfg(),
                           legend=dict(orientation="h",y=-0.3,font_size=11)); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     with c2:
         fig = px.violin(df, x=df["label"].map(RISK_LABEL), y="SystolicBP",
                         color=df["label"].map(RISK_LABEL), color_discrete_map=cm,
                         box=True, points=False, template="plotly_dark",
                         title="Blood Pressure Distribution by Risk Level")
         fig.update_layout(showlegend=False, height=290, **plotly_cfg()); ax(fig)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("""
