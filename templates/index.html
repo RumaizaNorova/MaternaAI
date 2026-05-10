@@ -341,10 +341,16 @@ footer{
 <!-- Hero -->
 <div class="hero">
   <div class="hero-eyebrow">IBM Z × UNSA Sheridan Hackathon 2026 &nbsp;·&nbsp; UN SDG 3 + SDG 10</div>
-  <h1>Every mother deserves a<br/>fair <em>risk assessment.</em></h1>
-  <p>AI-powered maternal health risk stratification for underserved communities.
-     Built on four IBM open-source research libraries — fairness, adversarial robustness,
-     local explainability, and differential privacy.</p>
+  <h1>Every mother deserves a<br/>fair <em>and understandable</em> risk assessment.</h1>
+  <p>
+    MaternaAI helps clinicians and community health workers quickly identify maternal risk — with
+    <strong>confidence intervals</strong>, <strong>explainability</strong>, <strong>fairness checks</strong>, and
+    <strong>security testing</strong> built in.
+  </p>
+  <div class="hero-support">
+    <span class="pill"><span class="dot"></span>Designed to support care decisions</span>
+    <span class="pill warn"><span class="dot"></span>Not a diagnosis — always use clinical judgement</span>
+  </div>
   <div class="hero-stats">
     <div class="hstat"><div class="num">287K</div><div class="lab">maternal deaths / year</div></div>
     <div class="hstat"><div class="num">95%</div><div class="lab">in low-income countries</div></div>
@@ -402,10 +408,14 @@ footer{
     <button class="btn-assess" id="btn-assess" onclick="assess()">
       Assess Risk
     </button>
+    <button class="btn-sub" type="button" onclick="fillExample('typical')">Use typical vitals</button>
     <div class="sidebar-note">
-      <strong>IBM UQ360 methodology:</strong> prediction includes 90% bootstrap confidence intervals
-      from 200 perturbation samples.<br/><br/>
-      <strong>IBM AIX360:</strong> LIME explanation shows which vitals drove <em>this specific</em> prediction.
+      <strong>Tip:</strong> enter the best available readings. MaternaAI will show
+      <strong>uncertainty</strong> (90% CI) and <strong>why</strong> the model thinks the patient is at risk (LIME).
+    </div>
+    <div class="sidebar-disclaimer">
+      <strong>Safety note:</strong> this is a hackathon prototype and should be treated as a decision-support aid only.
+      If symptoms are severe or vitals are unstable, prioritise urgent escalation.
     </div>
   </aside>
 
@@ -418,18 +428,25 @@ footer{
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
           <circle cx="12" cy="9" r="2.5"/>
         </svg>
-        <p>Enter patient vitals and click <strong>Assess Risk</strong> to get<br/>
-        a risk stratification with LIME explanation and 90% CI.</p>
+        <p>
+          Enter patient vitals and click <strong>Assess Risk</strong> to get a risk level,
+          confidence intervals, and an explanation you can review with the care team.
+        </p>
+        <div class="steps">
+          <span class="step">1) Enter vitals</span>
+          <span class="step">2) Review risk + uncertainty</span>
+          <span class="step">3) Check fairness, security & privacy</span>
+        </div>
       </div>
     </div>
 
     <!-- Section tabs -->
     <div class="section-tabs" style="margin-top:32px">
-      <button class="stab active" onclick="showTab('model')">Model Performance</button>
-      <button class="stab" onclick="showTab('fairness')">IBM AIF360 Fairness</button>
-      <button class="stab" onclick="showTab('security')">IBM ART Security</button>
-      <button class="stab" onclick="showTab('privacy')">IBM Privacy (ε=1.0)</button>
-      <button class="stab" onclick="showTab('population')">Population</button>
+      <button class="stab active" onclick="showTab('model', this)">Model Performance</button>
+      <button class="stab" onclick="showTab('fairness', this)">IBM AIF360 Fairness</button>
+      <button class="stab" onclick="showTab('security', this)">IBM ART Security</button>
+      <button class="stab" onclick="showTab('privacy', this)">IBM Privacy (ε=1.0)</button>
+      <button class="stab" onclick="showTab('population', this)">Population</button>
     </div>
 
     <!-- Model tab -->
@@ -470,11 +487,24 @@ footer{
 const $ = id => document.getElementById(id);
 function upd(id, vid) { $(vid).textContent = $(id).value; }
 
-function showTab(name) {
+function showTab(name, btnEl) {
   document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
-  event.target.classList.add('active');
+  (btnEl || document.querySelector(`.stab[onclick*="'${name}'"]`))?.classList.add('active');
   $('tab-'+name).classList.add('active');
+}
+
+function fillExample(preset) {
+  const v = preset === 'typical'
+    ? { age:25, systolic:118, diastolic:76, glucose:7.8, temp:98.6, hr:72 }
+    : { age:30, systolic:120, diastolic:80, glucose:7.2, temp:98.6, hr:75 };
+
+  $('age').value = v.age; upd('age','v-age');
+  $('systolic').value = v.systolic; upd('systolic','v-sys');
+  $('diastolic').value = v.diastolic; upd('diastolic','v-dia');
+  $('glucose').value = v.glucose;
+  $('temp').value = v.temp;
+  $('hr').value = v.hr; upd('hr','v-hr');
 }
 
 const COLORS = { 'Low Risk': '#34d399', 'Medium Risk': '#fbbf24', 'High Risk': '#fb7185' };
