@@ -462,26 +462,72 @@ async function assess() {
 }
 
 function renderResult(d, vitals) {
-  const css = ['low','mid','high'][d.pred];
-  const clr = [COLORS['Low Risk'], COLORS['Medium Risk'], COLORS['High Risk']][d.pred];
-  const confCls = d.confidence >= 0.9 ? 'conf-high' : d.confidence >= 0.75 ? 'conf-mid' : 'conf-low';
+  const css      = ['low','mid','high'][d.pred];
+  const confCls  = d.confidence >= 0.9 ? 'conf-high' : d.confidence >= 0.75 ? 'conf-mid' : 'conf-low';
   const briefCls = ['low','mid','high'][d.pred];
 
   const teenHtml = d.is_teen ? `
     <div class="teen-flag">⚠ Teenage patient — IBM AIF360 bias mitigation active. Extra clinical review recommended.</div>` : '';
 
+  // LIME bars
+  const maxLime = Math.max(...d.lime.map(i => Math.abs(i.contribution)));
   const limeHtml = d.lime.map(item => {
-    const maxAbs = Math.max(...d.lime.map(i => Math.abs(i.contribution)));
-    const w = Math.round(Math.abs(item.contribution) / maxAbs * 100);
+    const w      = Math.round(Math.abs(item.contribution) / (maxLime||1) * 100);
     const barClr = item.contribution > 0 ? '#fb7185' : '#34d399';
-    const sign = item.contribution > 0 ? '↑ risk' : '↓ risk';
-    const valSign = item.contribution > 0 ? '+' : '';
+    const sign   = item.contribution > 0 ? '+' : '';
     return `<div class="lime-row">
       <div class="lime-feat">${item.label}<span class="lime-cond">${item.condition}</span></div>
       <div class="lime-bar-wrap"><div class="lime-bar" style="width:${w}%;background:${barClr}"></div></div>
-      <div class="lime-val" style="color:${barClr}">${valSign}${(item.contribution*100).toFixed(1)}%</div>
+      <div class="lime-val" style="color:${barClr}">${sign}${(item.contribution*100).toFixed(1)}%</div>
     </div>`;
   }).join('');
+
+  // Counterfactual block (only if high/mid risk)
+  let cfHtml = '';
+  if (d.pred > 0 && d.counterfactual && d.counterfactual.length > 0) {
+    const targetLabel = ['Low Risk','Medium Risk','High Risk'][d.pred - 1];
+    const cfRows = d.counterfactual.slice(0,3).map(cf => {
+      const arrow = cf.direction === 'decrease' ? '↓' : '↑';
+      const clr   = cf.direction === 'decrease' ? '#34d399' : '#fbbf24';
+      return `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:1.2rem;color:${clr};line-height:1">${arrow}</div>
+        <div style="flex:1">
+          <div style="font-size:.82rem;font-weight:600;color:var(--text)">${cf.label}</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:2px">
+            ${cf.current} → <strong style="color:${clr}">${cf.target}</strong>
+            &nbsp;(${cf.direction} by ${Math.abs(cf.change).toFixed(2)}, ${cf.change_pct}% of clinical range)
+          </div>
+          ${cf.clinical_note ? `<div style="font-size:.72rem;color:#64748b;margin-top:3px;font-style:italic">${cf.clinical_note}</div>` : ''}
+        </div>
+        <div style="font-family:JetBrains Mono,monospace;font-size:.72rem;color:${clr};white-space:nowrap">${cf.change_pct}%</div>
+      </div>`;
+    }).join('');
+    cfHtml = `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">IBM AIX360 — Counterfactual: To reach ${targetLabel}</div>
+      <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:10px">
+        Minimum single-feature changes that would shift this patient's classification. Most actionable first.
+      </div>
+      ${cfRows}
+    </div>`;
+  }
+
+  // Privacy budget meter
+  const pb = d.privacy_budget;
+  const budgetPct = pb ? Math.min((pb.spent / pb.total) * 100, 100) : 0;
+  const budgetHtml = pb ? `
+    <div style="margin-top:14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+                border-radius:8px;font-size:.75rem;color:var(--text-muted)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span>IBM diffprivlib — Privacy Budget (ε=1.0 / query)</span>
+        <span style="font-family:JetBrains Mono,monospace;color:var(--teal)">
+          ${pb.spent.toFixed(2)} / ${pb.total} ε used (query #${pb.query_num})
+        </span>
+      </div>
+      <div class="rob-meter">
+        <div class="rob-fill" style="width:${budgetPct.toFixed(1)}%;background:${budgetPct>80?'#fb7185':'#2dd4bf'}"></div>
+      </div>
+    </div>` : '';
 
   $('result-area').innerHTML = `
     <div class="risk-banner risk-${css}">
@@ -496,51 +542,44 @@ function renderResult(d, vitals) {
           <span class="ci">${(d.ci_low[2]*100).toFixed(0)}–${(d.ci_high[2]*100).toFixed(0)}% CI</span></div>
       </div>
       <div><span class="conf-badge ${confCls}">
-        <span>◉</span> ${(d.confidence*100).toFixed(0)}% confidence — ${d.interval_label}
+        ◉ ${(d.confidence*100).toFixed(0)}% confidence — ${d.interval_label}
       </span></div>
       ${teenHtml}
     </div>
 
     <div class="two-col">
       <div class="card">
-        <div class="card-title">IBM AIX360 — LIME Local Explanation</div>
-        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:12px">
-          Why did <em>this specific patient</em> receive this score?
-        </div>
+        <div class="card-title">IBM AIX360 — LIME: Why This Score?</div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:10px">Feature contributions for <em>this specific patient</em></div>
         ${limeHtml}
       </div>
       <div class="card">
-        <div class="card-title">Risk Probabilities with 90% CI</div>
+        <div class="card-title">Risk Probabilities + 90% Bootstrap CI</div>
         <div id="prob-chart" style="height:210px"></div>
       </div>
     </div>
+
+    ${cfHtml}
 
     ${d.brief ? `
     <div class="brief-box ${briefCls}">
       <div class="brief-title">Clinical AI Brief</div>
       ${d.brief}
     </div>` : ''}
+
+    ${budgetHtml}
   `;
 
-  // Probability chart with CI error bars
   Plotly.newPlot('prob-chart', [{
-    type: 'bar',
-    x: ['Low Risk','Medium Risk','High Risk'],
-    y: d.probs.map(p => p*100),
-    marker: { color: ['#34d399','#fbbf24','#fb7185'] },
-    text: d.probs.map(p => `${(p*100).toFixed(1)}%`),
-    textposition: 'outside',
-    error_y: {
-      type:'data',
-      array: d.probs.map((p,i) => (d.ci_high[i]-p)*100),
-      arrayminus: d.probs.map((p,i) => (p-d.ci_low[i])*100),
-      color:'#243452', thickness:2, width:8,
-    }
-  }], {
-    ...PLOTLY_LAYOUT,
-    yaxis:{...PLOTLY_LAYOUT.yaxis, range:[0,115], title:{text:'%',font:{size:11}}},
-    showlegend:false,
-  }, {responsive:true, displayModeBar:false});
+    type:'bar', x:['Low Risk','Medium Risk','High Risk'],
+    y:d.probs.map(p=>p*100), marker:{color:['#34d399','#fbbf24','#fb7185']},
+    text:d.probs.map(p=>`${(p*100).toFixed(1)}%`), textposition:'outside',
+    error_y:{type:'data',
+      array:d.probs.map((p,i)=>(d.ci_high[i]-p)*100),
+      arrayminus:d.probs.map((p,i)=>(p-d.ci_low[i])*100),
+      color:'#243452',thickness:2,width:8},
+  }],{...PLOTLY_LAYOUT,yaxis:{...PLOTLY_LAYOUT.yaxis,range:[0,115]},showlegend:false},
+  {responsive:true,displayModeBar:false});
 }
 
 // ── Model info ─────────────────────────────────────────────────────────────────
@@ -626,164 +665,211 @@ async function loadModelInfo() {
 // ── Fairness ───────────────────────────────────────────────────────────────────
 async function loadFairness() {
   const d = await (await fetch('/api/fairness')).json();
-  const orig = d.original, mit = d.mitigated, vd = d.verdict;
+  const orig=d.original, rw=d.reweighing||{}, dir_=d.dir_mitigation||{}, ceop=d.calibrated_eq_odds||{};
+  const vd=d.verdict;
 
-  const metrics = [
-    ['Disparate Impact',       'disparate_impact',             '≥ 0.80','di_pass'],
-    ['Stat. Parity Diff.',     'statistical_parity_difference','± 0.10','spd_pass'],
-    ['Equal Opp. Diff.',       'equal_opportunity_difference', '± 0.10','eod_pass'],
-    ['Avg Odds Diff.',         'average_odds_difference',      '± 0.10','aod_pass'],
+  const mkeys = [
+    ['Disparate Impact',      'disparate_impact',              '≥ 0.80','di_pass'],
+    ['Stat. Parity Diff.',    'statistical_parity_difference', '± 0.10','spd_pass'],
+    ['Equal Opp. Diff.',      'equal_opportunity_difference',  '± 0.10','eod_pass'],
+    ['Avg Odds Diff.',        'average_odds_difference',       '± 0.10','aod_pass'],
   ];
 
-  const cards = metrics.map(([lbl, key, thr, pk]) => {
-    const ov = orig[key]||0, mv = mit[key]||ov;
-    const ok = vd[pk]; const clr = ok ? '#34d399' : '#fb7185';
+  const cards = mkeys.map(([lbl,key,thr,pk]) => {
+    const ov=orig[key]||0, rv=rw[key]??ov, dv=dir_[key]??ov, cv=ceop[key]??ov;
+    const ok=vd[pk]; const clr=ok?'#34d399':'#fb7185';
     return `<div class="metric-card">
-      <div style="font-size:.65rem;color:var(--text-muted);margin-bottom:4px">${lbl} (${thr})</div>
+      <div style="font-size:.62rem;color:var(--text-muted);margin-bottom:4px">${lbl} (${thr})</div>
       <div class="mval" style="color:${clr}">${ov.toFixed(3)}</div>
-      <div class="mlabel">After Reweighing: <strong style="color:var(--teal)">${mv.toFixed(3)}</strong></div>
+      <div style="font-size:.68rem;color:var(--text-muted);margin-top:6px;line-height:1.8">
+        Reweighing: <strong style="color:var(--teal)">${rv.toFixed(3)}</strong><br/>
+        DIR: <strong style="color:var(--teal)">${dv.toFixed(3)}</strong><br/>
+        Cal.EqOdds: <strong style="color:var(--teal)">${cv.toFixed(3)}</strong>
+      </div>
     </div>`;
   }).join('');
 
-  const scorecard = metrics.map(([lbl, key, , pk]) => {
-    const ok = vd[pk]; const clr = ok ? '#34d399' : '#fb7185';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;
-             padding:8px 0;border-bottom:1px solid var(--border);font-size:.83rem">
-      <span style="color:var(--text-dim)">${lbl}</span>
-      <span style="color:${clr};font-family:JetBrains Mono,monospace;font-weight:700">${ok?'✓':'✗'} ${(orig[key]||0).toFixed(3)}</span>
-    </div>`;
-  }).join('');
-
-  const policyBox = d.policy ? `
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">AI Governance Brief</div>
-      <div style="font-size:.84rem;line-height:1.75;color:var(--text-dim)">${d.policy}</div>
-    </div>` : '';
+  const strategyTable = ['Reweighing (pre)', 'Dispar. Impact Remover (pre)', 'Calibrated EqOdds (post)']
+    .map((name,si) => {
+      const src = [rw,dir_,ceop][si];
+      if (src.error) return `<tr><td style="color:var(--text-dim)">${name}</td><td colspan="4" style="color:#fb7185;font-size:.75rem">${src.error}</td></tr>`;
+      return `<tr>
+        <td style="color:var(--text-dim);padding:7px 0;font-size:.8rem">${name}</td>
+        ${mkeys.map(([,key])=>{
+          const v=src[key]??null;
+          if(v===null) return '<td style="color:var(--text-muted)">—</td>';
+          const ref=orig[key]||0;
+          const improved = key==='disparate_impact' ? v>ref : Math.abs(v)<Math.abs(ref);
+          return `<td style="font-family:JetBrains Mono,monospace;font-size:.78rem;color:${improved?'#34d399':'#fbbf24'}">${v.toFixed(3)}</td>`;
+        }).join('')}
+      </tr>`;
+    }).join('');
 
   $('fairness-content').innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;font-size:.83rem;color:var(--text-dim)">
-      <strong style="color:var(--teal)">Sensitive attribute:</strong>
-      Age group — Teen mothers (≤19) vs Adult mothers (≥20).
-      Teenage mothers face 3× higher maternal mortality but are systematically underdetected by biased models.
-      IBM AIF360 Reweighing corrects this by adjusting training sample weights.
+      <strong style="color:var(--teal)">IBM AIF360 — Three-Stage Mitigation Pipeline</strong><br/>
+      Sensitive attribute: teen mothers (≤19) vs adult mothers (≥20). 3× higher mortality, systematically underdetected.<br/>
+      We apply mitigation at <strong>preprocessing</strong> (Reweighing + DisparateImpactRemover) and
+      <strong>postprocessing</strong> (CalibratedEqOddsPostprocessing) stages.
     </div>
     <div class="verdict ${vd.fair?'ok':'fail'}">
-      ${vd.fair ? '✓ PASSES IBM AI FAIRNESS 360 STANDARDS (4/4 metrics)' : '⚠ BIAS DETECTED — IBM AIF360 REWEIGHING APPLIED'}
+      ${vd.fair?'✓ PASSES IBM AIF360 STANDARDS':'⚠ BIAS DETECTED — THREE MITIGATION STRATEGIES APPLIED'}
     </div>
     <div class="metric-grid">${cards}</div>
     <div class="two-col">
       <div class="card">
-        <div class="card-title">Before vs After IBM AIF360 Reweighing</div>
-        <div id="fairness-chart" style="height:260px"></div>
+        <div class="card-title">Three-Strategy Comparison</div>
+        <div id="fairness-chart" style="height:280px"></div>
       </div>
       <div class="card">
-        <div class="card-title">Fairness Scorecard</div>
-        ${scorecard}
-        ${policyBox}
+        <div class="card-title">Strategy Scorecard</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem">
+          <thead><tr style="color:var(--text-muted);font-size:.65rem;border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding-bottom:6px">Strategy</th>
+            <th>DI</th><th>SPD</th><th>EOD</th><th>AOD</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--text-muted);padding:7px 0;font-size:.8rem">Original</td>
+              ${mkeys.map(([,key])=>`<td style="font-family:JetBrains Mono,monospace;font-size:.78rem;color:#fb7185">${(orig[key]||0).toFixed(3)}</td>`).join('')}
+            </tr>
+            ${strategyTable}
+          </tbody>
+        </table>
+        ${d.policy?`<div class="card" style="margin-top:14px;padding:14px">
+          <div class="card-title">AI Governance Brief</div>
+          <div style="font-size:.82rem;line-height:1.7;color:var(--text-dim)">${d.policy}</div>
+        </div>`:''}
       </div>
     </div>
   `;
 
-  const keys = metrics.map(m=>m[1]);
-  const labs = metrics.map(m=>m[0]);
-  Plotly.newPlot('fairness-chart', [
-    {type:'bar',name:'Original',x:labs,y:keys.map(k=>orig[k]||0),marker:{color:'#fb7185'}},
-    {type:'bar',name:'After Reweighing',x:labs,y:keys.map(k=>mit[k]||0),marker:{color:'#34d399'}},
-  ], {
-    ...PLOTLY_LAYOUT, barmode:'group',
+  const keys=mkeys.map(m=>m[1]), labs=mkeys.map(m=>m[0]);
+  Plotly.newPlot('fairness-chart',[
+    {type:'bar',name:'Original',       x:labs,y:keys.map(k=>orig[k]||0),marker:{color:'#fb7185'}},
+    {type:'bar',name:'Reweighing',     x:labs,y:keys.map(k=>rw[k]||0),  marker:{color:'#34d399'}},
+    {type:'bar',name:'DIR',            x:labs,y:keys.map(k=>dir_[k]||0),marker:{color:'#2dd4bf'}},
+    {type:'bar',name:'Cal. EqOdds',    x:labs,y:keys.map(k=>ceop[k]||0),marker:{color:'#a78bfa'}},
+  ],{...PLOTLY_LAYOUT,barmode:'group',
     shapes:[
-      {type:'line',x0:-0.5,x1:3.5,y0:0.8,y1:0.8,line:{color:'#fbbf24',dash:'dot',width:1}},
-      {type:'line',x0:-0.5,x1:3.5,y0:0.1,y1:0.1,line:{color:'#243452',dash:'dot',width:1}},
-      {type:'line',x0:-0.5,x1:3.5,y0:-0.1,y1:-0.1,line:{color:'#243452',dash:'dot',width:1}},
+      {type:'line',x0:-.5,x1:3.5,y0:.8,y1:.8,line:{color:'#fbbf24',dash:'dot',width:1}},
+      {type:'line',x0:-.5,x1:3.5,y0:.1,y1:.1,line:{color:'#1c2a42',dash:'dot',width:1}},
+      {type:'line',x0:-.5,x1:3.5,y0:-.1,y1:-.1,line:{color:'#1c2a42',dash:'dot',width:1}},
     ],
-    legend:{orientation:'h',y:-0.3,font:{size:11}},
-  }, {responsive:true, displayModeBar:false});
+    legend:{orientation:'h',y:-0.28,font:{size:10}},
+    margin:{t:10,b:60,l:40,r:8},
+  },{responsive:true,displayModeBar:false});
 }
 
 // ── Security ───────────────────────────────────────────────────────────────────
 async function loadSecurity() {
   const d = await (await fetch('/api/security')).json();
-  const rob = d.overall_robustness_score||0;
-  const gRob = d.gaussian_noise?.robustness||0;
-  const itRob = d.iterative_black_box?.robustness||0;
-  const itAsr = d.iterative_black_box?.attack_success_rate||0;
-  const sens = d.feature_sensitivity||{};
+  const rob     = d.overall_robustness_score||0;
+  const dRob    = d.overall_defended_robustness_score||0;
+  const gn      = d.gaussian_noise||{};
+  const it      = d.iterative_black_box||{};
+  const sens    = d.feature_sensitivity||{};
 
-  const robColor = rob>=0.75?'#34d399':rob>=0.5?'#fbbf24':'#fb7185';
-  const robLabel = rob>=0.75?'Strong':rob>=0.5?'Moderate':'Vulnerable';
+  const robColor  = rob>=0.75?'#34d399':rob>=0.5?'#fbbf24':'#fb7185';
+  const dRobColor = dRob>=0.75?'#34d399':dRob>=0.5?'#fbbf24':'#fb7185';
+  const robLabel  = rob>=0.75?'Strong':rob>=0.5?'Moderate':'Vulnerable';
+  const gain      = Math.round((dRob - rob)*100);
+  const topFeat   = Object.keys(sens)[0]||'Blood Glucose';
 
-  const sensMax = Math.max(...Object.values(sens));
+  const sensMax = Math.max(...Object.values(sens), 0.0001);
   const sensHtml = Object.entries(sens).map(([feat, val]) => {
     const w = Math.round(val/sensMax*100);
     const clr = w>60?'#fb7185':w>30?'#fbbf24':'#34d399';
     return `<div class="lime-row">
-      <div class="lime-feat" style="min-width:180px">${feat}</div>
+      <div class="lime-feat" style="min-width:140px">${feat}</div>
       <div class="lime-bar-wrap"><div class="lime-bar" style="width:${w}%;background:${clr}"></div></div>
       <div class="lime-val" style="color:${clr}">${val.toFixed(4)}</div>
     </div>`;
   }).join('');
 
-  const topFeat = Object.keys(sens)[0]||'Blood Glucose';
+  const attackRows = [
+    {name:'Gaussian Noise ±5%', asr: gn.attack_success_rate||0, dAsr: gn.defended_asr||0,
+     rob: gn.robustness||0, dRob: gn.defended_robustness||0, imp: gn.defense_improvement||0,
+     desc:'Random measurement errors — baseline threat'},
+    {name:'Iterative Black-Box', asr: it.attack_success_rate||0, dAsr: it.defended_asr||0,
+     rob: it.robustness||0, dRob: it.defended_robustness||0, imp: it.defense_improvement||0,
+     desc:'Targeted greedy feature manipulation — clinical threat'},
+  ].map(a => {
+    const aC = a.asr<=0.25?'#34d399':a.asr<=0.5?'#fbbf24':'#fb7185';
+    const dC = a.dAsr<=0.25?'#34d399':a.dAsr<=0.5?'#fbbf24':'#fb7185';
+    return `
+    <div class="card" style="margin-bottom:12px;padding:14px 16px">
+      <div style="font-size:.78rem;font-weight:600;color:var(--text);margin-bottom:10px">${a.name}</div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:10px">${a.desc}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:.68rem;color:var(--rose);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Without Defense</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="rob-meter" style="flex:1"><div class="rob-fill" style="width:${a.rob*100}%;background:#fb7185"></div></div>
+            <span style="color:#fb7185;font-weight:700;font-family:JetBrains Mono,monospace;font-size:.8rem">${(a.rob*100).toFixed(0)}%</span>
+          </div>
+          <div style="font-size:.67rem;color:var(--text-muted);margin-top:3px">ASR: ${(a.asr*100).toFixed(0)}%</div>
+        </div>
+        <div>
+          <div style="font-size:.68rem;color:var(--teal);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">+ FeatureSqueezing</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="rob-meter" style="flex:1"><div class="rob-fill" style="width:${a.dRob*100}%;background:var(--teal)"></div></div>
+            <span style="color:var(--teal);font-weight:700;font-family:JetBrains Mono,monospace;font-size:.8rem">${(a.dRob*100).toFixed(0)}%</span>
+          </div>
+          <div style="font-size:.67rem;color:var(--teal);margin-top:3px">ASR: ${(a.dAsr*100).toFixed(0)}% &nbsp;▲${(a.imp*100).toFixed(0)}pp improved</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 
   $('security-content').innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;
                 padding:14px 18px;margin-bottom:16px;font-size:.83rem;color:var(--text-dim)">
       <strong style="color:var(--teal)">IBM ART Threat Model:</strong>
       A compromised clinic data-entry tablet subtly alters patient vitals to downgrade a high-risk mother to low-risk,
-      causing a missed referral and a preventable death. We simulate this attack and measure MaternaAI's resilience.
+      causing a missed referral. We run two attack classes then apply ART FeatureSqueezing defense and measure the reduction.
     </div>
     <div class="metric-grid">
       <div class="metric-card">
-        <div class="mlabel">Overall Robustness</div>
+        <div class="mlabel">Undefended Robustness</div>
         <div class="mval" style="color:${robColor}">${(rob*100).toFixed(0)}%</div>
         <div class="mlabel">${robLabel}</div>
       </div>
       <div class="metric-card">
-        <div class="mlabel">Gaussian Noise ±5%</div>
-        <div class="mval" style="color:${gRob>=0.75?'#34d399':'#fbbf24'}">${(gRob*100).toFixed(0)}%</div>
-        <div class="mlabel">Robustness</div>
+        <div class="mlabel">Defended Robustness</div>
+        <div class="mval" style="color:${dRobColor}">${(dRob*100).toFixed(0)}%</div>
+        <div class="mlabel">After FeatureSqueezing</div>
       </div>
       <div class="metric-card">
-        <div class="mlabel">Iterative Attack</div>
-        <div class="mval" style="color:${itAsr<=0.25?'#34d399':'#fb7185'}">${(itAsr*100).toFixed(0)}%</div>
-        <div class="mlabel">Attack success rate</div>
+        <div class="mlabel">Defense Gain</div>
+        <div class="mval" style="color:${gain>0?'#34d399':'#fbbf24'}">+${gain}pp</div>
+        <div class="mlabel">Robustness improvement</div>
       </div>
       <div class="metric-card">
         <div class="mlabel">Most Exploitable</div>
         <div class="mval" style="font-size:1rem;color:var(--rose)">${topFeat}</div>
-        <div class="mlabel">Highest sensitivity</div>
+        <div class="mlabel">Highest ART sensitivity</div>
       </div>
     </div>
     <div class="two-col">
-      <div class="card">
-        <div class="card-title">Feature Exploitability (IBM ART)</div>
-        ${sensHtml}
-        <div style="margin-top:14px;padding:10px 12px;background:rgba(251,113,133,.06);
-                    border:1px solid rgba(251,113,133,.2);border-radius:8px;font-size:.78rem;color:var(--text-dim)">
-          🔴 <strong style="color:var(--rose)">${topFeat}</strong> is the most exploitable vital sign.
-          IBM ART recommends input validation and anomaly detection on this feature.
+      <div>
+        <div class="card-title" style="margin-bottom:10px">Attack vs. Defense (IBM ART)</div>
+        ${attackRows}
+        <div style="padding:12px;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.2);
+                    border-radius:8px;font-size:.78rem;color:var(--text-dim)">
+          <strong style="color:var(--teal)">IBM ART FeatureSqueezing:</strong><br/>
+          Discretizes each vital sign into 2<sup>8</sup>=256 bins within its clinical range.
+          Adversarial perturbations smaller than the bin width are neutralized before the model sees them —
+          no model retraining required.
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Robustness by Attack Type</div>
-        ${[['Gaussian Noise ±5%', gRob, 'Baseline: random measurement error'],
-           ['Iterative Black-Box', itRob, 'Targeted: greedy feature manipulation']].map(([name,rob,desc]) => {
-          const c = rob>=0.75?'#34d399':rob>=0.5?'#fbbf24':'#fb7185';
-          return `<div class="card" style="margin-bottom:10px;padding:14px">
-            <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px">${name}</div>
-            <div style="display:flex;align-items:center;gap:12px">
-              <div class="rob-meter" style="flex:1"><div class="rob-fill" style="width:${rob*100}%;background:${c}"></div></div>
-              <div style="color:${c};font-weight:700;font-family:JetBrains Mono,monospace">${(rob*100).toFixed(0)}%</div>
-            </div>
-            <div style="font-size:.72rem;color:var(--text-muted);margin-top:6px">${desc}</div>
-          </div>`;
-        }).join('')}
-        <div style="padding:12px;background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);
-                    border-radius:8px;font-size:.78rem;color:var(--text-dim)">
-          <strong style="color:var(--green)">IBM ART Recommendations:</strong><br/>
-          1. Input validation on ${topFeat} (most exploitable)<br/>
-          2. Flag predictions where multiple vitals deviate ≥3σ simultaneously<br/>
-          3. Ensemble voting for high-stakes decisions
+        <div class="card-title">Feature Exploitability</div>
+        ${sensHtml}
+        <div style="margin-top:14px;padding:10px 12px;background:rgba(251,113,133,.06);
+                    border:1px solid rgba(251,113,133,.2);border-radius:8px;font-size:.78rem;color:var(--text-dim)">
+          <strong style="color:var(--rose)">${topFeat}</strong> is the most exploitable vital.
+          IBM ART recommends input validation and anomaly detection on this feature.
         </div>
       </div>
     </div>
